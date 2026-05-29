@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#F5A623" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="家庭三餐" />
+  <title>家庭三餐</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="top-bar">
+      <h1 id="page-title">家庭菜谱库</h1>
+    </header>
+
+    <main id="main-content">
+      <!-- 挑选菜谱 -->
+      <section id="view-recipes" class="view active">
+        <p class="subtitle">浏览家人上传的菜品，选餐次加入今日菜单</p>
+        <div id="recipes-banner" class="banner hidden">
+          <strong>尚未连接数据库</strong>
+          <span>请先在「设置」里填写 Supabase 配置</span>
+          <button type="button" class="link-btn" data-tab="setup">去设置 →</button>
+        </div>
+        <div id="recipes-loading" class="loading hidden">加载中…</div>
+        <div id="recipes-empty" class="empty hidden">
+          <div class="empty-icon">🍳</div>
+          <p>还没有菜谱，去「上传菜谱」添加第一道吧</p>
+        </div>
+        <div id="recipes-list" class="dish-list"></div>
+      </section>
+
+      <!-- 今日菜单 -->
+      <section id="view-menu" class="view">
+        <div class="menu-header">
+          <div>
+            <p class="subtitle no-margin" id="menu-count">共 0 道菜 · 按早/中/晚分组</p>
+          </div>
+          <button type="button" id="btn-clear-all" class="btn-text danger hidden">全部清空</button>
+        </div>
+        <div id="menu-loading" class="loading hidden">加载中…</div>
+        <div id="menu-empty" class="empty hidden">
+          <div class="empty-icon">📋</div>
+          <p>菜单还是空的<br />去「挑选菜谱」选餐次加入吧</p>
+        </div>
+        <div id="menu-sections"></div>
+      </section>
+
+      <!-- 上传菜谱 -->
+      <section id="view-upload" class="view">
+        <p class="subtitle">填写菜品信息，全家人都能看到</p>
+        <form id="upload-form" class="card form">
+          <label class="field">
+            <span>我的昵称</span>
+            <input type="text" id="upload-nick" maxlength="20" placeholder="显示为上传者/添加者" />
+          </label>
+          <label class="field">
+            <span class="required">菜名</span>
+            <input type="text" id="upload-name" maxlength="30" placeholder="例如：番茄炒蛋" required />
+          </label>
+          <label class="field">
+            <span class="required">菜品图片</span>
+            <div class="image-picker" id="image-picker">
+              <img id="upload-preview" class="preview hidden" alt="预览" />
+              <div id="upload-placeholder" class="placeholder">
+                <span>📷</span>
+                <span>点击选择图片</span>
+              </div>
+              <input type="file" id="upload-file" accept="image/*" hidden />
+            </div>
+          </label>
+          <label class="field">
+            <span>菜品说明</span>
+            <textarea id="upload-desc" rows="3" maxlength="500" placeholder="口味、适合哪一餐、小贴士等（选填）"></textarea>
+          </label>
+          <label class="field">
+            <span class="required">所需材料</span>
+            <textarea id="upload-materials" rows="5" maxlength="1000" placeholder="每行一种材料" required></textarea>
+          </label>
+          <label class="field">
+            <span class="required">制作过程</span>
+            <textarea id="upload-steps" rows="6" maxlength="2000" placeholder="按步骤写明做法" required></textarea>
+          </label>
+          <button type="submit" class="btn-primary" id="btn-submit">发布菜谱</button>
+        </form>
+      </section>
+
+      <!-- 设置 -->
+      <section id="view-setup" class="view">
+        <p class="subtitle">免费 Supabase 数据库，家人打开同一网站即可同步</p>
+        <div class="card setup-block">
+          <h2>① 注册 Supabase（免费）</h2>
+          <p>打开 <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a> → Sign up → 新建 Project（选 Free 免费计划）</p>
+        </div>
+        <div class="card setup-block">
+          <h2>② 建表</h2>
+          <p>Supabase 左侧 <strong>SQL Editor</strong> → 粘贴项目里 <code>supabase/schema.sql</code> 的内容 → Run</p>
+        </div>
+        <div class="card setup-block">
+          <h2>③ 创建图片存储</h2>
+          <p>左侧 <strong>Storage</strong> → New bucket → 名称填 <code>dish-images</code> → 勾选 Public → 在 bucket Policies 允许公开读写（详见 README）</p>
+        </div>
+        <div class="card setup-block">
+          <h2>④ 填写连接信息</h2>
+          <p>Supabase → <strong>Project Settings → API</strong>，复制 URL 和 anon public key：</p>
+          <label class="field">
+            <span>Project URL</span>
+            <input type="url" id="cfg-url" placeholder="https://xxxxx.supabase.co" />
+          </label>
+          <label class="field">
+            <span>anon public key</span>
+            <input type="text" id="cfg-key" placeholder="eyJhbGciOi..." />
+          </label>
+          <button type="button" class="btn-outline" id="btn-test">测试连接</button>
+          <button type="button" class="btn-primary" id="btn-save-config">保存并启用</button>
+          <p class="tip" id="setup-status"></p>
+        </div>
+        <div class="card setup-block cost">
+          <strong>费用说明</strong>
+          <p>Supabase 免费版足够家庭使用（约 500MB 数据库 + 1GB 图片）。网页托管用 Vercel/Netlify 也免费。无需微信云开发月费。</p>
+        </div>
+      </section>
+
+      <!-- 详情（全屏层） -->
+      <div id="detail-overlay" class="overlay hidden">
+        <div class="detail-sheet">
+          <button type="button" class="detail-close" id="detail-close" aria-label="关闭">×</button>
+          <img id="detail-image" class="detail-hero" alt="" />
+          <div class="detail-body">
+            <h2 id="detail-name"></h2>
+            <div class="detail-meta">
+              <span class="tag" id="detail-uploader"></span>
+              <span class="meta-time" id="detail-time"></span>
+            </div>
+            <div id="detail-desc-block" class="section card hidden">
+              <h3>菜品说明</h3>
+              <p id="detail-desc"></p>
+            </div>
+            <div class="section card">
+              <h3>所需材料</h3>
+              <pre id="detail-materials"></pre>
+            </div>
+            <div class="section card">
+              <h3>制作过程</h3>
+              <pre id="detail-steps"></pre>
+            </div>
+            <p class="tag" id="detail-menu-status"></p>
+            <button type="button" class="btn-primary" id="detail-add-menu">+ 选择餐次加入菜单</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 餐次选择 -->
+      <div id="meal-modal" class="modal hidden">
+        <div class="modal-box">
+          <h3>加入哪一餐？</h3>
+          <button type="button" class="meal-opt" data-meal="breakfast">🌅 早餐</button>
+          <button type="button" class="meal-opt" data-meal="lunch">☀️ 午餐</button>
+          <button type="button" class="meal-opt" data-meal="dinner">🌙 晚餐</button>
+          <button type="button" class="modal-cancel" id="meal-cancel">取消</button>
+        </div>
+      </div>
+    </main>
+
+    <nav class="tab-bar">
+      <button type="button" class="tab active" data-tab="recipes">挑选菜谱</button>
+      <button type="button" class="tab" data-tab="menu">今日菜单</button>
+      <button type="button" class="tab" data-tab="upload">上传菜谱</button>
+      <button type="button" class="tab" data-tab="setup">设置</button>
+    </nav>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/user.js"></script>
+  <script src="js/meals.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
